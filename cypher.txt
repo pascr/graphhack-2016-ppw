@@ -1,0 +1,12 @@
+LOAD CSV FROM 'file:///Users/will/dev/neo-flights/routes.dat' AS line CREATE (:Route {airlineCode: line[0], airlineId: toInt(line[1]), sourceAirportCode: line[2], sourceAirportId: toInt(line[3]), destinationAirport: line[4], destinationAirportId: toInt(line[5]), codeshare: line[6], stops: toInt(line[7]), equipment: line[8]})
+LOAD CSV FROM 'file:///Users/will/dev/neo-flights/airlines.dat' AS line CREATE (:Airline {airlineId: toInt(line[0]), name: line[1], alias: line[2], iataCode: line[3], icaoCode: line[4], callsign: line[5], country: line[6], active: line[7]})
+LOAD CSV FROM 'file:///Users/will/dev/neo-flights/airports.dat' AS line CREATE (:Airport {airportId: toInt(line[0]), name: line[1], city: line[2], country: line[3], iataCode: line[4], icaoCode: line[5], latitude: line[6], longitude: line[7], altitude: line[8], timezone: line[9], dst: line[10], tzdb: line[11]})
+
+create index on :Airport(airportId)
+create index on :Route(sourceAirportId)
+create index on :Route(destinationAirportId)
+
+
+match (n:Airport) where n.tzdb=~'Eur.*' return n limit 10
+
+match (r:Route),(port1:Airport),(port2:Airport) where r.sourceAirportId=port1.airportId and r.destinationAirportId=port2.airportId return r,port1,port2 limit 25

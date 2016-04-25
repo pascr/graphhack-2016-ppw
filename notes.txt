@@ -1,0 +1,2 @@
+Formula for prioritising routes:
+number of stops * (total distance travelled for route / distance between source and dest)

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+    <style type="text/css">
+        html {
+            height: 100%
+        }
+
+        body {
+            height: 100%;
+            margin: 0px;
+            padding: 0px
+        }
+
+        #map_canvas {
+            height: 100%
+        }
+    </style>
+    <script type="text/javascript"
+            src="http://maps.google.com/maps/api/js?sensor=false">
+    </script>
+    <script type="text/javascript">
+        var activityCode = 0;
+
+        function initialize() {
+            var latlng = new google.maps.LatLng(48.110278, 16.569722);
+            var myOptions = {
+                zoom: 4,
+                center: latlng,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                draggable: true
+            };
+            var map = new google.maps.Map(document.getElementById("map_canvas"),
+                    myOptions);
+
+            var client = new XMLHttpRequest();
+
+            var cypher = {"statements": [{"statement": "MATCH (n:Airport) RETURN n.latitude,n.longitude,n.name LIMIT 25"}]};
+
+            client.open('POST', 'http://localhost:7474/db/data/transaction/commit');
+            client.setRequestHeader('Content-Type', 'application/json');
+
+            var received = 0;
+
+            client.onreadystatechange = function () {
+                if (client.readyState == 4 && received == 0) {
+                    received++;
+
+                    var airports = JSON.parse(client.responseText)["results"][0]["data"];
+
+                    for (i = 0; i < airports.length; i++) {
+                        var airport = airports[i]["row"];
+                        new google.maps.Marker({
+                            position: new google.maps.LatLng(airport[0], airport[1], airport[2]),
+                            map: map,
+                            title: airports[i].name
+                        });
+                    }
+                }
+            };
+            client.send(JSON.stringify(cypher));
+
+            google.maps.event.addListener(map, 'click', function (latLng) {
+                if (activityCode == 1) {
+                    document.getElementById('srcStartLat').innerHTML = latLng.latLng.lat();
+                    document.getElementById('srcStartLong').innerHTML = latLng.latLng.lng();
+                    document.getElementById('instructions').innerHTML = 'Click bottom right corner of area you want to travel from';
+                    activityCode = 2;
+                }
+                else if (activityCode == 2) {
+                    document.getElementById('srcEndLat').innerHTML = latLng.latLng.lat();
+                    document.getElementById('srcEndLong').innerHTML = latLng.latLng.lng();
+                    document.getElementById('instructions').innerHTML = '';
+                    activityCode = 0;
+                }
+                else if (activityCode == 3) {
+                    document.getElementById('destStartLat').innerHTML = latLng.latLng.lat();
+                    document.getElementById('destStartLong').innerHTML = latLng.latLng.lng();
+                    document.getElementById('instructions').innerHTML = 'Click bottom right corner of area you want to travel to';
+                    activityCode = 4;
+                }
+                else if (activityCode == 4) {
+                    document.getElementById('destEndLat').innerHTML = latLng.latLng.lat();
+                    document.getElementById('destEndLong').innerHTML = latLng.latLng.lng();
+                    activityCode = 0;
+                }
+            });
+        }
+
+        function selectStartingRegionClicked() {
+            document.getElementById('instructions').innerHTML = 'Click top right corner of area you want to travel from';
+            activityCode = 1;
+        }
+
+        function selectEndRegionClicked() {
+            document.getElementById('instructions').innerHTML = 'Click top right corner of area you want to travel to';
+            activityCode = 3;
+        }
+
+    </script>
+</head>
+<body onload="initialize()">
+<div><a href="#" onclick='selectStartingRegionClicked()'>Select start region</a> <a href="#"
+                                                                                    onclick='selectEndRegionClicked()'>Select
+    end region</a></div>
+<div>Starting area: Start Lat <span id='srcStartLat'></span> Start Long <span id='srcStartLong'></span> End Lat <span
+        id='srcEndLat'></span> End Long <span id='srcEndLong'></span></div>
+<div>Destination area: Start Lat <span id='destStartLat'></span> Start Long <span id='destStartLong'></span> End Lat
+    <span id='destEndLat'></span> End Long <span id='destEndLong'></span></div>
+<div id='instructions'></div>
+<div id="map_canvas" style="width:65%; height:85%"></div>
+</body>
+</html>
