@@ -1,0 +1,4 @@
+Using periodic commit 1000 LOAD CSV FROM 'https://raw.githubusercontent.com/jpatokal/openflights/master/data/routes.dat' AS line 
+Match (fromAirport:Airport{iataCode:line[2]})
+Match (toAirport:Airport{iataCode:line[4]})
+Merge (fromAirport)-[:Route]->(toAirport)
